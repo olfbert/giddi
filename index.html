@@ -43,6 +43,8 @@ img{-webkit-user-drag:none;user-select:none}
 #loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
   background:radial-gradient(circle at 50% 35%,#5a3424,#2a1a14 70%);z-index:60;color:var(--cream);text-align:center;padding:24px}
 #loading h1{margin:0;font-size:clamp(30px,7vw,54px);letter-spacing:.5px;text-shadow:0 4px 0 #00000055}
+#loading .load-logo{width:min(56vw,46vh,300px);height:auto;filter:drop-shadow(0 8px 0 #00000045)}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 #loading .bar{width:min(320px,70vw);height:22px;border-radius:12px;background:#00000055;border:3px solid var(--cream);overflow:hidden}
 #loading .bar i{display:block;height:100%;width:0;background:linear-gradient(#ffd56a,#f0a63c);transition:width .2s}
 #loading p{margin:0;opacity:.85;font-size:14px;max-width:420px}
@@ -203,13 +205,18 @@ body.lefty #action-wrap{right:auto;left:calc(var(--sal) + 18px);flex-direction:r
 /* Hauptmenü */
 .menu-wrap{position:absolute;inset:0;display:flex;align-items:center;padding:calc(var(--sat) + 12px) calc(var(--sar) + 16px) calc(var(--sab) + 12px) calc(var(--sal) + 16px);pointer-events:auto}
 .menu-col{display:flex;flex-direction:column;gap:10px;width:min(320px,100%)}
-.title{margin:0 0 6px;font-size:clamp(34px,6.2vw,56px);line-height:.95;color:var(--cream);text-shadow:0 4px 0 var(--brown),0 7px 0 #00000045;letter-spacing:.5px;white-space:nowrap}
-.title .pre{display:block;font-size:.5em;line-height:1;margin-bottom:2px;color:#ffd68a;transform:rotate(-3deg);transform-origin:left bottom;letter-spacing:1px}
-.title small{display:block;font-size:.34em;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;color:#ffe2b8;text-shadow:0 2px 0 #00000055}
 .menu-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
 .xpbar{height:10px;border-radius:6px;background:#00000040;overflow:hidden;border:2px solid var(--cream);width:120px}
 .xpbar i{display:block;height:100%;background:linear-gradient(#9fe36a,#63b52b)}
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* Logo im Hauptmenü: quer rechts neben den Knöpfen, hoch oben mittig */
+.menu-logo{position:absolute;right:calc(var(--sar) + 4vw);top:50%;width:min(42vw,84vh,360px);height:auto;pointer-events:none;
+  transform:translateY(-50%) rotate(-4deg);filter:drop-shadow(0 8px 0 #00000050);animation:logoIn .5s cubic-bezier(.3,1.5,.5,1)}
+@keyframes logoIn{from{opacity:0;transform:translateY(-50%) rotate(-12deg) scale(.7)}to{opacity:1;transform:translateY(-50%) rotate(-4deg) scale(1)}}
+@media (orientation:portrait){
+  .menu-logo{right:auto;left:50%;top:calc(var(--sat) + 16px);width:min(64vw,36vh,320px);transform:translateX(-50%) rotate(-4deg);animation-name:logoInP}
+  @keyframes logoInP{from{opacity:0;transform:translateX(-50%) rotate(-12deg) scale(.7)}to{opacity:1;transform:translateX(-50%) rotate(-4deg) scale(1)}}
+}
 .menu-grid .btn{font-size:15px}
 
 /* Level-Karte */
@@ -306,8 +313,6 @@ body.reduced *{animation:none!important;transition:none!important}
   .sheet-head h2{font-size:20px}
   .btn{min-height:46px;font-size:15px}
   .menu-col{gap:7px}
-  .title{font-size:44px;margin-bottom:2px}
-  .title small{display:none}
   .menu-stats{margin-bottom:0}
 }
 @media (max-width:520px){
@@ -357,7 +362,7 @@ body.reduced *{animation:none!important;transition:none!important}
   <div id="screen-root"></div>
   <div id="toasts" aria-live="polite"></div>
   <div id="rotate-hint" hidden>Tipp: Im Querformat siehst du die Küche größer.</div>
-  <div id="loading"><h1>Giddi’s Kitchen Husch</h1><div class="bar"><i></i></div><p id="loading-msg">Lade Küche …</p></div>
+  <div id="loading"><img class="load-logo" src="assets/ui/logo.png" alt=""><h1 class="vh">Giddi’s Kitchen Husch</h1><div class="bar"><i></i></div><p id="loading-msg">Lade Küche …</p></div>
 </div>
 <noscript><p style="color:#fff;padding:20px">Dieses Spiel benötigt JavaScript.</p></noscript>
 <script type="module">
@@ -394,8 +399,7 @@ import * as SkeletonUtils from './lib/three/addons/utils/SkeletonUtils.js';
    ===================================================================== */
 const CONFIG = {
   GAME_NAME: 'Giddi’s Kitchen Husch',
-  TITLE_LINES: ['Giddi’s', 'Kitchen Husch'],   // Schriftzug im Hauptmenü (kleine Zeile, große Zeile)
-  VERSION: '0.1.3',
+  VERSION: '0.1.4',
   SAVE: { db: 'kuechenrallye', store: 'save', key: 'main', schema: 1 },   // interner Name bleibt, damit vorhandene Spielstände erhalten bleiben
   START_COINS: 60,
   TILE: 2,                                   // Rastergröße einer Station (Welt-Einheiten)
@@ -438,6 +442,7 @@ const ASSETS = {
   ui: {
     heart: 'IconsDefault38_128px.png', heartBroken: 'IconsDefault39_128px.png', bolt: 'IconsDefault5_128px.png',
     plus: 'IconsDefault19_128px.png', cross: 'IconsDefault25_128px.png',
+    logo: 'logo.png',   // Spiel-Logo (Hauptmenü & Ladebildschirm)
   },
 };
 
@@ -2216,14 +2221,14 @@ class UI {
     const s = this.save, info = levelInfo(s.xp), next = this.g.nextLevelId(), nd = LEVELS.find(l => l.id === next);
     const warn = this.g.save.available ? '' : `<div class="toast bad" style="animation:none">Speichern nicht möglich – Fortschritt geht beim Schließen verloren.</div>`;
     this.open('menu', `<div class="menu-wrap"><div class="menu-col">
-      <h1 class="title"><span class="pre">${esc(CONFIG.TITLE_LINES[0])}</span>${esc(CONFIG.TITLE_LINES[1])}<small>Koch-Chaos in 3D</small></h1>
+      <h1 class="vh">${esc(CONFIG.GAME_NAME)}</h1>
       <div class="menu-stats">${this.coins()}<div class="pill">Lv ${info.level}<div class="xpbar"><i style="width:${(info.into / info.need * 100).toFixed(0)}%"></i></div></div></div>
       <button class="btn green" data-act="continue">${SVG.play.replace('#7a3e2e', '#fff')} ${next === 0 ? 'Tutorial starten' : 'Weiter: ' + esc(nd.name)}</button>
       <button class="btn wood" data-act="levels">${SVG.map} Level-Karte</button>
       <div class="menu-grid">
         <button class="btn" data-act="shop">${SVG.cart} Shop</button><button class="btn" data-act="recipes">${SVG.book} Rezepte</button>
         <button class="btn" data-act="settings" data-arg="menu">${SVG.gear} Optionen</button><button class="btn" data-act="help" data-arg="menu">${SVG.help} Hilfe</button>
-      </div>${warn}</div></div>`, 'clear');
+      </div>${warn}</div><img class="menu-logo" src="${ASSETS.paths.ui + ASSETS.ui.logo}" alt="" onerror="this.remove()"></div>`, 'clear');
   }
   // ---- Level-Karte ----
   showLevels() {

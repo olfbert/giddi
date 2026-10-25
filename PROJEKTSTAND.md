@@ -1,6 +1,6 @@
 # Projektstand Giddi’s Kitchen Husch (Kr Spiel)
 
-Stand: 25.10.2026 · Version 0.1.3
+Stand: 25.10.2026 · Version 0.1.4
 
 ## Was fertig und getestet ist
 
@@ -22,7 +22,7 @@ Stand: 25.10.2026 · Version 0.1.3
 
 ## Wichtige Entscheidungen
 
-- Name „Giddi’s Kitchen Husch“ (von Flo festgelegt, vorher „Küchenrallye“) – zentral in `CONFIG.GAME_NAME` / `CONFIG.TITLE_LINES`;
+- Name „Giddi’s Kitchen Husch“ (von Flo festgelegt, vorher „Küchenrallye“) – zentral in `CONFIG.GAME_NAME`; Logo `assets/ui/logo.png` (von Flo) im Hauptmenü und Ladebildschirm;
   Home-Bildschirm-Name „Kitchen Husch“. Interne Namen (IndexedDB `kuechenrallye`, Cache-Präfix) bleiben für vorhandene Spielstände.
 - Three.js ohne Importmap eingebunden (Imports in den Addons auf relative Pfade umgeschrieben) → läuft auch auf älteren iOS-Versionen.
 - Bestellkarten und Tutorial-Hinweis teilen sich den oberen Streifen; die Kamera reserviert ihn (`World.topPx`).
@@ -33,6 +33,7 @@ Stand: 25.10.2026 · Version 0.1.3
 
 ## Änderungen
 
+- 0.1.4: Logo „Giddi’s Kitchen Husch“ im Hauptmenü (quer rechts, hoch oben) und auf dem Ladebildschirm.
 - 0.1.3: Kühlschrank aus der Ecke neben die Brötchen-Kiste (Wunsch von Flo); ein Kühlschrank für Rind- und Gemüse-Patty (Tausch per Aktionstaste);
   Ecken nur noch Deko; Zwiebel-Kiste in die vordere Reihe, Tellerstapel auf die Kücheninsel, Mülleimer vorne rechts.
 - 0.1.2: Umbenannt in „Giddi’s Kitchen Husch“.
@@ -40,6 +41,6 @@ Stand: 25.10.2026 · Version 0.1.3
 
 ## Mögliche nächste Schritte
 
-- Weitere Assets einbinden (z. B. KayKit-Figuren für Koch/Gäste, Sounds, Musik, Logo) – über `ASSETS` in index.html.
+- Weitere Assets einbinden (z. B. KayKit-Figuren für Koch/Gäste, Sounds, Musik) – über `ASSETS` in index.html.
 - Abwasch-Mechanik (schmutzige Teller), zweite Küche/Layout für spätere Level, Endlosmodus.
 - Balancing nach echten Testrunden auf dem iPhone anpassen (`CONFIG`, `LEVELS`, `UPGRADES`).

@@ -1,7 +1,7 @@
 /* Service Worker – Giddi’s Kitchen Husch
    Cache-first für Spieldateien, Netzwerk-zuerst für die Startseite (Updates).
    Diese Datei wird mit der Liste aller Spieldateien erzeugt; bei neuen Assets VERSION erhöhen. */
-const VERSION = 'kuechenrallye-v0.1.2';
+const VERSION = 'kuechenrallye-v0.1.3';
 const PRECACHE = [
   "./",
   "./index.html",

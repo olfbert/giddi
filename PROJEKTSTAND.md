@@ -1,6 +1,6 @@
 # Projektstand Giddi’s Kitchen Husch (Kr Spiel)
 
-Stand: 25.10.2026 · Version 0.1.2
+Stand: 25.10.2026 · Version 0.1.3
 
 ## Was fertig und getestet ist
 
@@ -9,7 +9,7 @@ Stand: 25.10.2026 · Version 0.1.2
 - Gäste (eingefärbte Mannequins, zufällige Mützen) laufen zu 4 nummerierten Ausgaben, bestellen, warten, gehen froh oder verärgert.
 - 8 Rezepte, alle per automatischem Testspieler zubereitet und serviert: Salat, Klassik-Burger, Ofen-Pommes,
   Zwiebelringe, Deluxe-Burger, Veggie-Burger, Rinder-Eintopf (Topf), Keulen-Menü (Ofen + Püree aus dem Topf).
-- Stationen: Kisten/Kühlschränke, 2 Schneidebretter, 2 Pfannen, Kochtopf, Ofen, Anrichten, Tellerstapel, Mülleimer, 4 Ausgaben.
+- Stationen: Kisten/Kühlschrank, 2 Schneidebretter, 2 Pfannen, Kochtopf, Ofen, Anrichten, Tellerstapel, Mülleimer, 4 Ausgaben.
   Pfanne/Topf/Ofen garen automatisch und verbrennen nach Warnung.
 - Küche wächst mit gekauften Rezepten (inaktive Stationen = Arbeitsflächen).
 - 8 Level + Tutorial (9 Schritte), Sterne nach Punkten, Münzen = Preis + Trinkgeld + Levelbonus, XP/Spielerlevel.
@@ -33,6 +33,8 @@ Stand: 25.10.2026 · Version 0.1.2
 
 ## Änderungen
 
+- 0.1.3: Kühlschrank aus der Ecke neben die Brötchen-Kiste (Wunsch von Flo); ein Kühlschrank für Rind- und Gemüse-Patty (Tausch per Aktionstaste);
+  Ecken nur noch Deko; Zwiebel-Kiste in die vordere Reihe, Tellerstapel auf die Kücheninsel, Mülleimer vorne rechts.
 - 0.1.2: Umbenannt in „Giddi’s Kitchen Husch“.
 - 0.1.1: Tutorial-Hinweis verdeckt die Küche nicht mehr (v. a. Hochformat); Hochformat-Layout neu; Sprechblasen bleiben im Bild.
 

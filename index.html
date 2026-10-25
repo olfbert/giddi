@@ -395,7 +395,7 @@ import * as SkeletonUtils from './lib/three/addons/utils/SkeletonUtils.js';
 const CONFIG = {
   GAME_NAME: 'Giddi’s Kitchen Husch',
   TITLE_LINES: ['Giddi’s', 'Kitchen Husch'],   // Schriftzug im Hauptmenü (kleine Zeile, große Zeile)
-  VERSION: '0.1.2',
+  VERSION: '0.1.3',
   SAVE: { db: 'kuechenrallye', store: 'save', key: 'main', schema: 1 },   // interner Name bleibt, damit vorhandene Spielstände erhalten bleiben
   START_COINS: 60,
   TILE: 2,                                   // Rastergröße einer Station (Welt-Einheiten)
@@ -562,13 +562,14 @@ const LEVELS = [
 
 // Küchenlayout im Raster (c = Spalte → x, r = Reihe → z). face = Blickrichtung der Front (S=+z, E=+x, N=-z, W=-x)
 // Stationen ohne Bedarf in den aktiven Rezepten werden automatisch zu Arbeitsflächen.
+// Ecken (schwer erreichbar) sind nur Deko. Eine Quelle kann mehrere Zutaten liefern (ing: [...]) – mit der Zutat in der Hand wird getauscht.
 const LAYOUT = {
   cols: 7, rows: 5, passCol: 7,
   guestX: 16.9, corridorX: 18.7, spawnZ: 12.4,
   stations: [
-    { type: 'source', ing: 'patty',  c: 0, r: 0, face: 'S' },
+    { type: 'decor', c: 0, r: 0, face: 'S', decor: [{ model: 'jar_A_medium', x: -0.5, z: -0.3 }, { model: 'jar_B_small', x: 0.05, z: -0.4 }, { model: 'jar_C_large', x: 0.55, z: -0.25 }] },
     { type: 'source', ing: 'bun',    c: 1, r: 0, face: 'S' },
-    { type: 'source', ing: 'vpatty', c: 2, r: 0, face: 'S' },
+    { type: 'source', ing: ['patty', 'vpatty'], c: 2, r: 0, face: 'S' },   // ein Kühlschrank für Rind- und Gemüse-Patty
     { type: 'pan',  c: 3, r: 0, face: 'S' },
     { type: 'pan',  c: 4, r: 0, face: 'S' },
     { type: 'pot',  c: 5, r: 0, face: 'S' },
@@ -576,17 +577,17 @@ const LAYOUT = {
     { type: 'source', ing: 'lettuce', c: 0, r: 1, face: 'E' },
     { type: 'source', ing: 'tomato',  c: 0, r: 2, face: 'E' },
     { type: 'source', ing: 'cheese',  c: 0, r: 3, face: 'E' },
-    { type: 'source', ing: 'onion',   c: 0, r: 4, face: 'E' },
-    { type: 'source', ing: 'potato',  c: 1, r: 4, face: 'N' },
-    { type: 'source', ing: 'carrot',  c: 2, r: 4, face: 'N' },
-    { type: 'source', ing: 'steak',   c: 3, r: 4, face: 'N' },
-    { type: 'source', ing: 'ham',     c: 4, r: 4, face: 'N' },
-    { type: 'trash',  c: 5, r: 4, face: 'N' },
-    { type: 'plates', c: 6, r: 4, face: 'N' },
+    { type: 'decor', c: 0, r: 4, face: 'E', alt: true, decor: [{ model: 'ketchup', x: -0.35, z: 0.1 }, { model: 'mustard', x: 0.05, z: -0.15 }] },
+    { type: 'source', ing: 'onion',   c: 1, r: 4, face: 'N' },
+    { type: 'source', ing: 'potato',  c: 2, r: 4, face: 'N' },
+    { type: 'source', ing: 'carrot',  c: 3, r: 4, face: 'N' },
+    { type: 'source', ing: 'steak',   c: 4, r: 4, face: 'N' },
+    { type: 'source', ing: 'ham',     c: 5, r: 4, face: 'N' },
+    { type: 'trash',  c: 6, r: 4, face: 'N' },
     { type: 'board',  c: 2, r: 2, face: 'S' },
     { type: 'board',  c: 3, r: 2, face: 'S' },
     { type: 'counter', c: 4, r: 2, face: 'S', model: 'island' },
-    { type: 'counter', c: 5, r: 2, face: 'S', model: 'island' },
+    { type: 'plates', c: 5, r: 2, face: 'S', model: 'island' },
     { type: 'counter', c: 7, r: 0, face: 'W' },
     { type: 'pass', slot: 0, c: 7, r: 1, face: 'W' },
     { type: 'pass', slot: 1, c: 7, r: 2, face: 'W' },
@@ -1180,6 +1181,7 @@ class Station {
     this.group = new THREE.Group(); this.group.position.copy(this.center); this.group.rotation.y = this.rotY;
     this.holder = new THREE.Group(); this.group.add(this.holder);
     this.item = null; this.topY = 1.0; this.itemScale = 0.8; this.ui = null; this.uiY = 2.0;
+    this.ings = [].concat(def.ing || []); this.activeIngs = this.ings.slice();
     const h = CONFIG.TILE / 2;
     this.rect = { minX: this.center.x - h, maxX: this.center.x + h, minZ: this.center.z - h, maxZ: this.center.z + h };
   }
@@ -1408,32 +1410,46 @@ class PotStation extends Station {
 }
 
 class SourceStation extends Station {
-  get name() { return INGREDIENTS[this.def.ing].source.startsWith('fridge') ? 'Kühlschrank' : 'Kiste'; }
+  get model() { return INGREDIENTS[this.ings[0]].source; }
+  get name() { return this.model.startsWith('fridge') ? 'Kühlschrank' : 'Kiste'; }
   build(A) {
-    const ing = INGREDIENTS[this.def.ing];
-    const m = this.place(A.instance(ing.source)); this.extendRectFrom(m);
-    const fridge = ing.source.startsWith('fridge');
+    const m = this.place(A.instance(this.model)); this.extendRectFrom(m);
+    const fridge = this.model.startsWith('fridge'), list = this.activeIngs.length ? this.activeIngs : this.ings;
     this.setHolder(fridge ? 2.5 : 0.95, 0.6);
-    if (fridge) { const o = this.game.view.buildIngredient(this.def.ing, 'raw'); o.scale.setScalar(0.75); o.position.set(0, 2.5, 0.1); this.group.add(o); }
+    // Kühlschrank: Inhalt oben drauf zeigen (bei mehreren Zutaten nebeneinander)
+    if (fridge) list.forEach((id, i) => { const o = this.game.view.buildIngredient(id, 'raw'); o.scale.setScalar(list.length > 1 ? 0.6 : 0.75); o.position.set(list.length > 1 ? (i - (list.length - 1) / 2) * 0.75 : 0, 2.5, 0.1); this.group.add(o); });
     this.uiY = fridge ? 3.2 : 1.7;
   }
   getAction() {
-    const P = this.game.player, held = P.held, id = this.def.ing, nm = INGREDIENTS[id].short || INGREDIENTS[id].name;
-    if (!held) return { label: 'Nimm ' + nm, icon: 'box', ok: true, run: () => { P.take(new Ingredient(id)); this.game.sfx.play('pickup'); } };
-    if (held.kind === 'ing' && held.id === id && held.state === 'raw') return { label: 'Zurücklegen', icon: 'box', ok: true, run: () => { P.drop(); this.game.sfx.play('drop'); } };
-    if (held.kind === 'plate') {
-      const reason = canAddToPlate(held, { id, state: 'raw' }, this.game.session.recipes);
-      if (!reason) return { label: nm + ' auf Teller', icon: 'plate', ok: true, run: () => { held.parts.push({ id, state: 'raw' }); P.refreshHeld(); this.game.sfx.play('pickup'); } };
-      return { label: 'Nimm ' + nm, icon: 'box', ok: false, reason: 'Hände voll – Teller erst abstellen' };
+    const P = this.game.player, held = P.held, list = this.activeIngs.length ? this.activeIngs : this.ings;
+    const nm = id => INGREDIENTS[id].short || INGREDIENTS[id].name, first = list[0];
+    if (!held) return { label: 'Nimm ' + nm(first), icon: 'box', ok: true, run: () => { P.take(new Ingredient(first)); this.game.sfx.play('pickup'); } };
+    if (held.kind === 'ing' && held.state === 'raw' && list.includes(held.id)) {
+      if (list.length > 1) {
+        const next = list[(list.indexOf(held.id) + 1) % list.length];
+        return { label: 'Tausch: ' + nm(next), icon: 'box', ok: true, run: () => { P.drop(); P.take(new Ingredient(next)); this.game.sfx.play('pickup'); } };
+      }
+      return { label: 'Zurücklegen', icon: 'box', ok: true, run: () => { P.drop(); this.game.sfx.play('drop'); } };
     }
-    return { label: 'Nimm ' + nm, icon: 'box', ok: false, reason: 'Hände voll' };
+    if (held.kind === 'plate') {
+      const id = list.find(i => !canAddToPlate(held, { id: i, state: 'raw' }, this.game.session.recipes));
+      if (id) return { label: nm(id) + ' auf Teller', icon: 'plate', ok: true, run: () => { held.parts.push({ id, state: 'raw' }); P.refreshHeld(); this.game.sfx.play('pickup'); } };
+      return { label: 'Nimm ' + nm(first), icon: 'box', ok: false, reason: 'Hände voll – Teller erst abstellen' };
+    }
+    return { label: 'Nimm ' + nm(first), icon: 'box', ok: false, reason: 'Hände voll' };
   }
+}
+
+// reine Deko (z. B. in Ecken) – blockiert den Weg, ist aber keine Station
+class DecorStation extends CounterStation {
+  get name() { return ''; }
+  getAction() { return null; }
 }
 
 class PlatesStation extends Station {
   get name() { return 'Tellerstapel'; }
   build(A) {
-    const m = this.place(A.instance(ASSETS.roles.counterAlt)); this.extendRectFrom(m);
+    const m = this.place(A.instance(this.def.model === 'island' ? ASSETS.roles.island : ASSETS.roles.counterAlt)); this.extendRectFrom(m);
     for (let i = 0; i < 5; i++) this.place(A.instance(ASSETS.roles.plate), 0, 1.0 + i * 0.075, 0).rotation.y = i * 0.4;
     this.setHolder(1.4, 0.8);
   }
@@ -1501,6 +1517,7 @@ function createStation(game, def) {
     case 'plates': return new PlatesStation(game, def);
     case 'trash': return new TrashStation(game, def);
     case 'pass': return new PassStation(game, def);
+    case 'decor': return new DecorStation(game, def);
     default: return new CounterStation(game, def);
   }
 }
@@ -1531,6 +1548,7 @@ class Kitchen {
     for (const def of LAYOUT.stations) {
       const active = this.isActive(def, needs);
       const st = active ? createStation(g, def) : new CounterStation(g, { ...def, type: 'counter', inactive: true, alt: def.face !== 'S' });
+      if (st.type === 'source') st.activeIngs = st.ings.filter(i => needs.ings.has(i));
       st.build(A); this.root.add(st.group); this.stations.push(st);
     }
     this.colliders = this.stations.map(s => s.rect);
@@ -1546,7 +1564,7 @@ class Kitchen {
   }
   isActive(def, needs) {
     switch (def.type) {
-      case 'source': return needs.ings.has(def.ing);
+      case 'source': return [].concat(def.ing).some(i => needs.ings.has(i));
       case 'pot': return needs.procs.has('pot');
       case 'oven': return needs.procs.has('oven');
       case 'pan': return needs.procs.has('pan');
@@ -1587,6 +1605,7 @@ class Kitchen {
     const fx = Math.sin(facing), fz = Math.cos(facing), maxD = CONFIG.PLAYER.radius + CONFIG.PLAYER.reach;
     let best = null, bestScore = Infinity;
     for (const st of this.stations) {
+      if (st.type === 'decor') continue;
       const r = st.rect, cx = clamp(pos.x, r.minX, r.maxX), cz = clamp(pos.z, r.minZ, r.maxZ), d = Math.hypot(pos.x - cx, pos.z - cz);
       if (d > maxD) continue;
       const tx = st.center.x - pos.x, tz = st.center.z - pos.z, tl = Math.hypot(tx, tz) || 1, dot = (tx * fx + tz * fz) / tl;
@@ -2371,6 +2390,7 @@ class UI {
       <h3>So läuft ein Level</h3><ul><li>Gäste stellen sich an die nummerierten Ausgaben und bestellen. Oben siehst du die Bestellungen mit Geduldsbalken.</li>
       <li>Zutaten aus Kisten und Kühlschränken holen, auf dem Schneidebrett schneiden, in Pfanne, Topf oder Ofen garen.</li>
       <li>Einen Teller holen, alle Bestandteile darauflegen und an der Ausgabe des richtigen Gastes servieren. Falsche Teller werden nicht angenommen.</li>
+      <li>Der Kühlschrank hat Rind- und Gemüse-Patty: Mit einem Patty in der Hand tauscht die Aktionstaste die Sorte.</li>
       <li>Pfanne, Topf und Ofen garen allein weiter – bei <b>!</b> schnell abholen, sonst verbrennt es (Punktabzug). Verbranntes in den Mülleimer.</li>
       <li>Schneller Service = mehr Trinkgeld und Punkte. Punkte entscheiden über die Sterne, ab 1 Stern ist das Level geschafft.</li></ul>
       <h3>Statusanzeigen</h3><ul><li><b>Angenommen</b>: noch nichts vorbereitet · <b>In Arbeit</b>: Zutaten oder ein passender Teller sind unterwegs · <b>Fertig ✓</b>: ein passender Teller ist bereit.</li></ul>
@@ -2394,21 +2414,21 @@ class Tutorial {
     this.steps = [
       { text: 'Willkommen in deiner Küche! Lauf herum: Daumen links aufs Display legen und ziehen (oder WASD).', check: () => g.player.moved > 3 },
       { text: 'Gast 1 möchte einen Salat. Geh zur markierten Salat-Kiste und drück die Aktionstaste.', enter: () => g.session.orders.spawn(),
-        target: () => find('source', s => s.def.ing === 'lettuce'), check: () => holds('lettuce') || anyIng('lettuce', 'chopped') },
+        target: () => find('source', s => s.ings.includes('lettuce')), check: () => holds('lettuce') || anyIng('lettuce', 'chopped') },
       { text: 'Leg den Salat aufs Schneidebrett und tippe auf „Schneiden“. Stehen bleiben, bis der Balken voll ist.',
         target: () => holds('lettuce') ? find('board', s => !s.item) || find('board') : find('board', s => s.item?.id === 'lettuce') || find('board'), check: () => anyIng('lettuce', 'chopped') || plateWith('lettuce:chopped') },
       { text: 'Super! Jetzt dasselbe mit einer Tomate: holen und schneiden.',
-        target: () => holds('tomato') ? find('board', s => !s.item) || find('board') : (find('board', s => s.item?.id === 'tomato') || find('source', s => s.def.ing === 'tomato')), check: () => anyIng('tomato', 'chopped') || plateWith('tomato:chopped') },
+        target: () => holds('tomato') ? find('board', s => !s.item) || find('board') : (find('board', s => s.item?.id === 'tomato') || find('source', s => s.ings.includes('tomato'))), check: () => anyIng('tomato', 'chopped') || plateWith('tomato:chopped') },
       { text: 'Hol einen Teller vom Tellerstapel. Mit Teller in der Hand nimmst du die geschnittenen Zutaten direkt auf.',
         target: () => g.player.held?.kind === 'plate' ? find('board', s => s.item?.kind === 'ing') : find('plates'), check: () => [g.player.held, ...K().stations.map(s => s.item)].some(it => it?.kind === 'plate' && exactRecipe(it.parts)?.id === 'salat') },
       { text: 'Fertig! Bring den Salat zur Ausgabe 1 vor Gast 1 und tippe auf „Servieren“.',
         target: () => find('pass', s => s.def.slot === (g.session.orders.active[0]?.slot ?? 0)), check: () => g.session.served >= 1 },
       { text: 'Gast 2 möchte einen Burger. Hol ein Patty aus dem markierten Kühlschrank und leg es in die Pfanne.', enter: () => g.session.orders.spawn(),
-        target: () => holds('patty') ? find('pan', s => !s.item) || find('pan') : find('source', s => s.def.ing === 'patty'), check: () => K().stationsOf('pan').some(s => s.item?.id === 'patty') || anyIng('patty', 'fried') || plateWith('patty:fried') },
+        target: () => holds('patty') ? find('pan', s => !s.item) || find('pan') : find('source', s => s.ings.includes('patty')), check: () => K().stationsOf('pan').some(s => s.item?.id === 'patty') || anyIng('patty', 'fried') || plateWith('patty:fried') },
       { text: 'Die Pfanne brät von allein. Hol inzwischen einen Teller und leg ein Brötchen darauf.',
-        target: () => g.player.held?.kind === 'plate' ? find('source', s => s.def.ing === 'bun') : find('plates'), check: () => plateWith('bun:raw') },
+        target: () => g.player.held?.kind === 'plate' ? find('source', s => s.ings.includes('bun')) : find('plates'), check: () => plateWith('bun:raw') },
       { text: 'Nimm das gebratene Patty mit dem Teller aus der Pfanne, bevor es verbrennt (rotes !). Dann zu Gast 2 und servieren.',
-        target: () => { const hp = g.player.held; if (hp?.kind === 'plate' && exactRecipe(hp.parts)?.id === 'burger') return find('pass', s => s.def.slot === (g.session.orders.active[0]?.slot ?? 1)); return find('pan', s => s.item?.id === 'patty') || find('source', s => s.def.ing === 'patty'); },
+        target: () => { const hp = g.player.held; if (hp?.kind === 'plate' && exactRecipe(hp.parts)?.id === 'burger') return find('pass', s => s.def.slot === (g.session.orders.active[0]?.slot ?? 1)); return find('pan', s => s.item?.id === 'patty') || find('source', s => s.ings.includes('patty')); },
         check: () => g.session.served >= 2 },
     ];
   }

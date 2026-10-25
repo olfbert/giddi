@@ -5,7 +5,7 @@ du holst Zutaten, schneidest, brätst, kochst und backst, richtest auf Tellern a
 dem richtigen Gast – unter Zeitdruck. Mit Leveln, Sternen, Münzen, Rezept- und Upgrade-Shop,
 Tutorial und dauerhaftem Spielstand (IndexedDB). Läuft komplett statisch, ohne Server und ohne Anmeldung.
 
-Version: 0.1.2 · Engine: three.js r169 (lokal eingebunden)
+Version: 0.1.3 · Engine: three.js r169 (lokal eingebunden)
 
 ## Starten
 
@@ -47,13 +47,14 @@ Graue Aktionstaste = geht gerade nicht; Tippen zeigt den Grund. Linkshänder-Mod
 
 - Gäste kommen von rechts unten und stellen sich an die Ausgaben 1–4. Die Bestellkarten oben zeigen Gericht,
   Bestandteile (mit Station-Symbol), Geduldsbalken und Status: **neu**, **in Arbeit**, **fertig ✓**.
-- Zutaten aus Kisten/Kühlschränken holen → Schneidebrett (Taste antippen, stehen bleiben) → Pfanne / Kochtopf / Ofen
+- Zutaten aus Kisten und dem Kühlschrank holen → Schneidebrett (Taste antippen, stehen bleiben) → Pfanne / Kochtopf / Ofen
   (garen automatisch, verbrennen nach einer Weile) → auf einen Teller vom Tellerstapel → an der Ausgabe des Gastes servieren.
+- Der Kühlschrank liefert Rind- und Gemüse-Patty: mit einem Patty in der Hand erneut die Aktionstaste drücken tauscht die Sorte.
 - Ein falscher Teller wird nicht angenommen („Das ist für Gast 2!“). Verbranntes kommt in den Mülleimer.
 - Belohnung je Gericht: Preis + Trinkgeld (je schneller, desto mehr). Punkte entscheiden über die Sterne;
   ab 1 Stern ist das Level geschafft und das nächste wird frei. Abgelaufene Geduld und Verbranntes kosten Punkte.
 - Münzen gibst du im Shop aus: neue Rezepte (teils ab einem Spielerlevel) und Upgrades.
-- Die Küche wächst mit: Stationen (zweiter Kühlschrank, Kochtopf, Ofen, weitere Kisten) erscheinen erst,
+- Die Küche wächst mit: Stationen (Kochtopf, Ofen, weitere Kisten) erscheinen erst,
   wenn ein gekauftes Rezept sie braucht – vorher sind dort Arbeitsflächen.
 
 ## Inhalte
@@ -99,7 +100,8 @@ Zustände: `loading → menu → countdown → playing ⇄ paused → levelCompl
 - **Neue Zutat**: Eintrag in `INGREDIENTS` (Modelle je Zustand, Arbeitsschritte mit Dauer, Quelle) und eine
   `source`-Station in `LAYOUT`.
 - **Level**: Array `LEVELS` (Dauer, Gäste, gleichzeitige Gäste, Rezept-Pool, Geduld-Faktor, Abstände).
-- **Küche**: `LAYOUT.stations` im 2×2-Raster (Spalte `c`, Reihe `r`, Blickrichtung `face`).
+- **Küche**: `LAYOUT.stations` im 2×2-Raster (Spalte `c`, Reihe `r`, Blickrichtung `face`). Ecken sind `decor` (nicht bedienbar),
+  eine Quelle kann mit `ing: [...]` mehrere Zutaten liefern.
 
 ### Asset-Zuordnung
 
@@ -115,7 +117,7 @@ Alle Pfade und Rollen stehen zentral in `ASSETS` (Abschnitt 2):
 | Schneidebrett | `kitchentable_A` + `cuttingboard` + `knife` |
 | Pfanne / Topf | `stove_single` + `pan_A` / `pot_A` (+ `stew_pot` als Füllung) |
 | Ofen | `oven` |
-| Kühlschränke | `fridge_A` (Patty), `fridge_B` (Gemüse-Patty) |
+| Kühlschrank | `fridge_A` (Rind- und Gemüse-Patty, Tausch per Aktionstaste) |
 | Kisten | `crate_buns/lettuce/tomatoes/cheese/onions/potatoes/carrots/steak/ham` |
 | Teller / Ausgabe | `plate`, `kitchentable_A` |
 | Gerichte | `food_burger`, `food_vegetableburger`, `food_stew`, `food_dinner`; sonst aus Zutaten zusammengesetzt |
